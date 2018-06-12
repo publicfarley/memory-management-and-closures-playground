@@ -1,13 +1,4 @@
 import UIKit
-import PlaygroundSupport
-PlaygroundPage.current.needsIndefiniteExecution = true
-
-func doPrintSeparator() {
-    print("\n-----------\n")
-}
-
-//:
-
 //: # Parent - Child Reference Relationships
 //: ## 1. One way. Parent stronlgy refers to Child.
 //: ## 🆗
@@ -34,6 +25,10 @@ class Parent: Base {
 
 var p: Parent? = Parent(child: Child())  // +1 p, +1 c
 p = nil // -1 c, -1 p
+
+func doPrintSeparator() {
+    print("\n-----------\n")
+}
 
 doPrintSeparator()
 
@@ -127,6 +122,15 @@ doPrintSeparator()
 
 class MyView: UIView {
     
+    init() {
+        super.init(frame: CGRect.zero)
+        print("\(self) got allocated.")
+    }
+    
+    required init?(coder aDecoder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+    
     func animateMe() {
         UIView.animate(withDuration: 1.0) {
             self.alpha = 0.5
@@ -139,7 +143,23 @@ class MyView: UIView {
 }
 
 MyView().animateMe()
-// successfully prints at the console that child `MyView` instance got deallocated
+doPrintSeparator()
+
+
+
+class Greeter {
+    required init() {
+        print("\(self) got allocated.")
+    }
+    
+    func greet() {
+        assertionFailure("greet() method must be overriden.")
+    }
+    
+    deinit {
+        print("\(self) got deallocated.")
+    }
+}
 
 //: ----
 
@@ -157,8 +177,12 @@ final class GreetingService {
     }
 }
 
-final class GreeterUsingAnonymousInlineClosure: Base {
+final class GreeterUsingAnonymousInlineClosure: Greeter {
     var message: String?
+ 
+    required init() {
+        super.init()
+    }
  
     func greet() {
         GreetingService.getGreeting { message in
@@ -182,15 +206,20 @@ final class GreetingService {
     }
 }
 
-final class GreeterUsingAnonymousInlineClosure: Base {
+final class GreeterUsingAnonymousInlineClosure: Greeter {
     var message: String?
     
-    func greet() {
+    required init() {
+        super.init()
+    }
+
+    override func greet() {
         GreetingService.getGreeting { message in
             self.message = message
         }
     }
 }
+
 
 //: ----
 
@@ -200,14 +229,18 @@ final class GreeterUsingAnonymousInlineClosure: Base {
  2. Strong Closure Property
  
  ```
- final class GreeterWithStrongClosureProperty: Base  {
+ final class GreeterWithStrongClosureProperty: Greeter  {
     var message: String?
- 
+
+    required init() {
+        super.init()
+    }
+
     lazy var messageHandler: (String) -> Void = { message in
         self.message = message
     }
  
-    func greet() {
+    override func greet() {
         GreetingService.getGreeting(completion: messageHandler)
     }
  }
@@ -224,14 +257,18 @@ So the messageHanlder closure instance has a strong reference to the Greeter ins
  ```
  */
 
-final class GreeterWithStrongClosureProperty: Base  {
+final class GreeterWithStrongClosureProperty: Greeter  {
     var message: String?
+    
+    required init() {
+        super.init()
+    }
  
     lazy var messageHandler: (String) -> Void = { message in
         self.message = message
     }
  
-    func greet() {
+    override func greet() {
         GreetingService.getGreeting(completion: messageHandler)
     }
  }
@@ -247,14 +284,18 @@ final class GreeterWithStrongClosureProperty: Base  {
 
 
 ```
-final class GreeterWithStrongClosurePropertyWeaklyCapturedSelf: Base  {
+final class GreeterWithStrongClosurePropertyWeaklyCapturedSelf: Greeter  {
     var message: String?
+ 
+    required init() {
+        super.init()
+    }
  
     lazy var messageHandler: (String) -> Void = { [weak self] message in
         self?.message = message
     }
  
-    func greet() {
+    override func greet() {
         GreetingService.getGreeting(completion: messageHandler)
     }
 }
@@ -266,14 +307,18 @@ final class GreeterWithStrongClosurePropertyWeaklyCapturedSelf: Base  {
  > This is _possibly_ 🆗. Depends on context.
 */
 
-final class GreeterWithStrongClosurePropertyWeaklyCapturedSelf: Base  {
+final class GreeterWithStrongClosurePropertyWeaklyCapturedSelf: Greeter  {
     var message: String?
-    
+
+    required init() {
+        super.init()
+    }
+
     lazy var messageHandler: (String) -> Void = { [weak self] message in
         self?.message = message
     }
     
-    func greet() {
+    override func greet() {
         GreetingService.getGreeting(completion: messageHandler)
     }
 }
@@ -287,15 +332,19 @@ final class GreeterWithStrongClosurePropertyWeaklyCapturedSelf: Base  {
 
  
  ```
-final class GreeterWithStrongClosurePropertyWeaklyCapturedSelfThenStrongSelf: Base  {
+final class GreeterWithStrongClosurePropertyWeaklyCapturedSelfThenStrongSelf: Greeter  {
     var message: String?
- 
+
+    required init() {
+        super.init()
+    }
+
     lazy var messageHandler: (String) -> Void = { [weak self] message in
         guard let strongSelf = self else { return }
         strongSelf.message = message
     }
  
-    func greet() {
+    override func greet() {
         GreetingService.getGreeting(completion: messageHandler)
     }
 }
@@ -308,15 +357,19 @@ final class GreeterWithStrongClosurePropertyWeaklyCapturedSelfThenStrongSelf: Ba
  */
 
 
-final class GreeterWithStrongClosurePropertyWeaklyCapturedSelfThenStrongSelf: Base  {
+final class GreeterWithStrongClosurePropertyWeaklyCapturedSelfThenStrongSelf: Greeter  {
     var message: String?
     
+    required init() {
+        super.init()
+    }
+
     lazy var messageHandler: (String) -> Void = { [weak self] message in
         guard let strongSelf = self else { return }
         strongSelf.message = message
     }
     
-    func greet() {
+    override func greet() {
         GreetingService.getGreeting(completion: messageHandler)
     }
 }
@@ -330,14 +383,18 @@ final class GreeterWithStrongClosurePropertyWeaklyCapturedSelfThenStrongSelf: Ba
 
  
  ```
-final class GreeterWithInstanceMethodAsHandler: Base  {
+final class GreeterWithInstanceMethodAsHandler: Greeter  {
     var message: String?
  
+    required init() {
+        super.init()
+    }
+
     func messageHandler(message: String) {
         self.message = message
     }
  
-    func greet() {
+    override func greet() {
         GreetingService.getGreeting(completion: messageHandler)
     }
 }
@@ -349,14 +406,18 @@ final class GreeterWithInstanceMethodAsHandler: Base  {
  */
 
 
-final class GreeterWithInstanceMethodAsHandler: Base  {
+final class GreeterWithInstanceMethodAsHandler: Greeter  {
     var message: String?
     
+    required init() {
+        super.init()
+    }
+
     func messageHandler(message: String) {
         self.message = message
     }
     
-    func greet() {
+    override func greet() {
         GreetingService.getGreeting(completion: messageHandler)
     }
 }
@@ -377,15 +438,20 @@ final class MessageHandlerHolder {
     }
 }
 
-final class GreeterWithInstanceMethodAsHandlerGivenToStronglyHeldMessageHandlerHolder: Base  {
+final class GreeterWithInstanceMethodAsHandlerGivenToStronglyHeldMessageHandlerHolder: Greeter  {
     var message: String?
+ 
+    required init() {
+        super.init()
+    }
+
     lazy var messageHandlerHolder: MessageHandlerHolder = MessageHandlerHolder(messageHandler: self.messageHandler)
  
     func messageHandler(message: String) {
         self.message = message
     }
  
-    func greet() {
+    override func greet() {
         GreetingService.getGreeting(completion: messageHandlerHolder.messageHandler)
     }
 }
@@ -405,15 +471,20 @@ final class MessageHandlerHolder {
     }
 }
 
-final class GreeterWithInstanceMethodAsHandlerGivenToStronglyHeldMessageHandlerHolder: Base  {
+final class GreeterWithInstanceMethodAsHandlerGivenToStronglyHeldMessageHandlerHolder: Greeter  {
     var message: String?
+
+    required init() {
+        super.init()
+    }
+
     lazy var messageHandlerHolder: MessageHandlerHolder = MessageHandlerHolder(messageHandler: self.messageHandler)
     
     func messageHandler(message: String) {
         self.message = message
     }
     
-    func greet() {
+    override func greet() {
         GreetingService.getGreeting(completion: messageHandlerHolder.messageHandler)
     }
 }
@@ -427,14 +498,18 @@ final class GreeterWithInstanceMethodAsHandlerGivenToStronglyHeldMessageHandlerH
 
  
  ```
- final class GreeterWithAnonymousClosureAsHandlerGivenToStronglyHeldMessageHandlerHolder: Base  {
+ final class GreeterWithAnonymousClosureAsHandlerGivenToStronglyHeldMessageHandlerHolder: Greeter  {
     var message: String?
+ 
+    required init() {
+        super.init()
+    }
  
     lazy var messageHandlerHolder: MessageHandlerHolder = MessageHandlerHolder(messageHandler: { message in
         self.message = message
     })
  
-    func greet() {
+    override func greet() {
         GreetingService.getGreeting(completion: messageHandlerHolder.messageHandler)
     }
 }
@@ -452,14 +527,18 @@ final class GreeterWithInstanceMethodAsHandlerGivenToStronglyHeldMessageHandlerH
 
  */
 
-final class GreeterWithAnonymousClosureAsHandlerGivenToStronglyHeldMessageHandlerHolder: Base  {
+final class GreeterWithAnonymousClosureAsHandlerGivenToStronglyHeldMessageHandlerHolder: Greeter  {
     var message: String?
-    
+
+    required init() {
+        super.init()
+    }
+
     lazy var messageHandlerHolder: MessageHandlerHolder = MessageHandlerHolder(messageHandler: { message in
         self.message = message
     })
     
-    func greet() {
+    override func greet() {
         GreetingService.getGreeting(completion: messageHandlerHolder.messageHandler)
     }
 }
@@ -474,11 +553,14 @@ final class GreeterWithAnonymousClosureAsHandlerGivenToStronglyHeldMessageHandle
 
  
  ```
-final class GreeterWithLocalClosureAsHandler: Base  {
+final class GreeterWithLocalClosureAsHandler: Greeter  {
     var message: String?
  
+    required init() {
+        super.init()
+    }
  
-    func greet() {
+    override func greet() {
  
         let messageHandler: (String) -> Void = { message in
             self.message = message
@@ -495,11 +577,14 @@ final class GreeterWithLocalClosureAsHandler: Base  {
  */
 
 
-final class GreeterWithLocalClosureAsHandler: Base  {
+final class GreeterWithLocalClosureAsHandler: Greeter  {
     var message: String?
     
+    required init() {
+        super.init()
+    }
     
-    func greet() {
+    override func greet() {
         
         let messageHandler: (String) -> Void = { message in
             self.message = message
@@ -517,10 +602,14 @@ final class GreeterWithLocalClosureAsHandler: Base  {
  9.  Local function as Handler.
 
  ```
-final class GreeterWithLocalFunctionAsHandler: Base  {
+final class GreeterWithLocalFunctionAsHandler: Greeter  {
     var message: String?
  
-    func greet() {
+    required init() {
+        super.init()
+    }
+ 
+    override func greet() {
  
         func messageHandler(_ message: String) {
             self.message = message
@@ -537,10 +626,14 @@ final class GreeterWithLocalFunctionAsHandler: Base  {
  */
 
 
-final class GreeterWithLocalFunctionAsHandler: Base  {
+final class GreeterWithLocalFunctionAsHandler: Greeter  {
     var message: String?
     
-    func greet() {
+    required init() {
+        super.init()
+    }
+    
+    override func greet() {
         
         func messageHandler(_ message: String) {
             self.message = message
@@ -553,100 +646,23 @@ final class GreeterWithLocalFunctionAsHandler: Base  {
 //: ----
 
 /*:
- # Can we unit test for retain cycles? Yes we can.
+ # Results:
+ 
+ Observe below the results of running the various Greeter types with various reference relationships.
+ 
+ - 'allocation'/'deallocation' pairs indicate a proper termination scenario.
+ - an 'allocation' without a corresponding 'deallocation' indicates a reference cycle.
  */
 
-protocol Initable: class {
-    init()
-}
 
-func isClassRetained<T: Initable>(_ myType: T.Type) -> Bool {
+var greeters: Array<Greeter.Type> = [GreeterUsingAnonymousInlineClosure.self,GreeterWithStrongClosureProperty.self,GreeterWithStrongClosurePropertyWeaklyCapturedSelf.self,GreeterWithStrongClosurePropertyWeaklyCapturedSelfThenStrongSelf.self,GreeterWithInstanceMethodAsHandler.self,GreeterWithInstanceMethodAsHandlerGivenToStronglyHeldMessageHandlerHolder.self,GreeterWithAnonymousClosureAsHandlerGivenToStronglyHeldMessageHandlerHolder.self,GreeterWithLocalClosureAsHandler.self,GreeterWithLocalFunctionAsHandler.self]
 
-    var strongRef: T? = myType.init()
-    weak var weakRef = strongRef
-
-    // Nilling out the strong reference should release the object, making the weak reference also nil
-    strongRef = nil
-
-    return weakRef != nil
-}
-
-final class MyClass: Initable {
-    init() {}
-}
-
-final class MySelfRetainingClass: Initable {
-    
-    lazy var myClosure: () -> Void = {
-        let x = self
-    }
-    
-    init() {
-        myClosure()
-    }
-}
-
-isClassRetained(MyClass.self)  // false. MyClass instance successfully deallocated.
-isClassRetained(MySelfRetainingClass.self) // true. MySelfRetainingClass instance is retained (not deallocated).
-
-protocol Greeter: class {
-    func greet()
-}
-
-extension GreeterUsingAnonymousInlineClosure: Greeter,Initable {}
-extension GreeterWithStrongClosureProperty: Greeter,Initable {}
-extension GreeterWithStrongClosurePropertyWeaklyCapturedSelf: Greeter,Initable {}
-extension GreeterWithStrongClosurePropertyWeaklyCapturedSelfThenStrongSelf: Greeter,Initable {}
-extension GreeterWithInstanceMethodAsHandler: Greeter,Initable {}
-extension GreeterWithInstanceMethodAsHandlerGivenToStronglyHeldMessageHandlerHolder: Greeter,Initable {}
-extension GreeterWithAnonymousClosureAsHandlerGivenToStronglyHeldMessageHandlerHolder: Greeter,Initable {}
-extension GreeterWithLocalClosureAsHandler: Greeter,Initable {}
-extension GreeterWithLocalFunctionAsHandler: Greeter,Initable {}
-
-func isGreeterRetained<T: Greeter & Initable>(_ greeter: T.Type) -> Bool {
-
-    var strongRef: T? = greeter.init()
-    strongRef?.greet()
-    
-    weak var weakRef = strongRef
-    
-    // Nilling out the strong reference should release the object, making the weak reference also nil
-    strongRef = nil
-    
-    return weakRef != nil
-}
-
-
-extension Array where Element: Greeter & Initable {
-    func go() {
-        print(type(of: self.first))
-    }
-}
-
-
-
-let greeters: Array<(Greeter & Initable).Type>  =
-    [GreeterUsingAnonymousInlineClosure.self, GreeterWithStrongClosureProperty.self]
-
-greeters.forEach { (greeterType: (Greeter & Initable).Type) in
-    let greeter = greeterType.init()
-    greeter.greet()
+greeters.forEach {
+    ($0.init()).greet()
     doPrintSeparator()
 }
 
-
-//: The unit test results:  👍
-//isGreeterRetained(GreeterUsingAnonymousInlineClosure.self) // false
-//isGreeterRetained(GreeterWithStrongClosureProperty.self) // true
-//isGreeterRetained(GreeterWithStrongClosurePropertyWeaklyCapturedSelf.self) // false
-//isGreeterRetained(GreeterWithStrongClosurePropertyWeaklyCapturedSelfThenStrongSelf.self) // false
-//isGreeterRetained(GreeterWithInstanceMethodAsHandler.self) // false
-//isGreeterRetained(GreeterWithInstanceMethodAsHandlerGivenToStronglyHeldMessageHandlerHolder.self) // true
-//isGreeterRetained(GreeterWithAnonymousClosureAsHandlerGivenToStronglyHeldMessageHandlerHolder.self) // true
-//isGreeterRetained(GreeterWithLocalClosureAsHandler.self) // false
-//isGreeterRetained(GreeterWithLocalFunctionAsHandler.self) // false
-
-
+// Note: The results are printed in the console window.
 //: ----
 
 /*:
